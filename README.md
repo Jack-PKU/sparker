@@ -191,37 +191,41 @@ node index.js login --email=you@example.com --password=your_password
 
 > **重要：定时任务是 Sparker 充分学习的关键。** 如果不配置定时任务，回溯分析和经验提炼都不会自动运行，Agent 只能依赖实时采集，容易遗漏大量隐性知识。
 
-### Digest 复盘 + 回溯分析（每 12 小时）
+### Digest 复盘 + 回溯分析
 
-复盘流程现在包含回溯分析：
-1. **回溯分析**：读取最近 12 小时的 OpenClaw 对话日志，用 LLM 提取实时采集遗漏的知识
+复盘流程包含回溯分析：
+1. **回溯分析**：读取最近的 OpenClaw 对话日志，用 LLM 提取实时采集遗漏的知识
 2. **归纳合成**：将满足条件的 RawSpark 晋升为 RefinedSpark
 3. **知识衰减**：降低长期未使用经验的置信度
 4. **能力图谱更新**：重建领域能力评估
 
 复盘后 Agent 会主动向用户展示学习成果——包括回溯新发现、即将衰退的经验、提议发布到社区。
 
-```bash
-# Cron（每 12 小时）
-0 */12 * * * cd your-project && node openclaw/skills/sparker/index.js digest
-```
+### 配置方式：OpenClaw 内置 Cron（推荐）
 
-### 每日学习报告
+使用 OpenClaw 内置的定时任务系统，Agent 在完整上下文中运行 digest，并**自动将结果发回聊天渠道**：
 
 ```bash
-# 每天 20:00 生成学习报告
-0 20 * * * cd your-project && node openclaw/skills/sparker/index.js daily-report
+openclaw cron add \
+  --name "Sparker Digest" \
+  --cron "0 23 * * *" \
+  --tz "Asia/Shanghai" \
+  --session isolated \
+  --message "执行 Sparker 定期复盘：运行 node skills/sparker/index.js digest，然后按照 SKILL.md 中 T5 触发器的要求，向我展示回溯分析发现和学习报告。" \
+  --announce \
+  --channel last
 ```
 
-报告包含：今日新增经验（含回溯发现）、新炼化的精炼经验、当前能力图谱、即将衰退的经验。
+- `--session isolated`：独立会话运行，不干扰主聊天
+- `--announce` + `--channel last`：完成后自动投递到 Agent 最近回复的渠道
+- `--cron "0 23 * * *"`：每天 23:00（可改为 `"0 */12 * * *"` 每 12 小时）
+- 也可以指定渠道：`--channel feishu --to "<group_id>"`
 
-### OpenClaw 用户配置提示
-
-OpenClaw 用户可以在 `AGENTS.md` 中添加定期提醒，让 Agent 在每次会话开始时自动检查是否需要运行 digest：
-
-```markdown
-## 定期任务
-- 每次会话开始时，运行 `node skills/sparker/index.js status`，如果距上次 digest 超过 12 小时，主动运行 `node skills/sparker/index.js digest` 并向我展示结果。
+管理命令：
+```bash
+openclaw cron list                    # 查看所有定时任务
+openclaw cron run <jobId> --force     # 手动触发一次
+openclaw cron edit <jobId> --cron "0 */12 * * *"  # 修改频率
 ```
 
 ### 环境变量调优
