@@ -187,23 +187,23 @@ node index.js login --email=you@example.com --password=your_password
 
 ---
 
-## 定时任务
+## 定时任务与主动汇报
 
-> **重要：定时任务是 Sparker 充分学习的关键。** 如果不配置定时任务，回溯分析和经验提炼都不会自动运行，Agent 只能依赖实时采集，容易遗漏大量隐性知识。
+> **重要：定时任务是 Sparker 充分学习的关键。** 不配置定时任务，回溯分析和经验提炼都不会自动运行，Agent 只能依赖实时采集，容易遗漏大量隐性知识。
 
-### Digest 复盘 + 回溯分析
+### Digest 复盘流程
 
-复盘流程包含回溯分析：
-1. **回溯分析**：读取最近的 OpenClaw 对话日志，用 LLM 提取实时采集遗漏的知识
+每次复盘自动完成：
+1. **回溯分析**：重新审视最近的对话历史，用 LLM 补充提取实时采集遗漏的知识
 2. **归纳合成**：将满足条件的 RawSpark 晋升为 RefinedSpark
 3. **知识衰减**：降低长期未使用经验的置信度
 4. **能力图谱更新**：重建领域能力评估
 
-复盘后 Agent 会主动向用户展示学习成果——包括回溯新发现、即将衰退的经验、提议发布到社区。
+**核心理念：定时执行 + 主动汇报。** 让 Agent 定期运行 `node skills/sparker/index.js digest`，并在完成后主动向用户展示学习成果——包括回溯新发现的知识（请用户确认）、即将衰退的经验、建议发布到社区的高质量经验。只要你的 Agent 框架支持定时任务和消息投递，就能实现这个闭环。
 
-### 配置方式：OpenClaw 内置 Cron（推荐）
+### OpenClaw 用户：内置 Cron + 自动投递（推荐）
 
-使用 OpenClaw 内置的定时任务系统，Agent 在完整上下文中运行 digest，并**自动将结果发回聊天渠道**：
+OpenClaw 内置了定时任务系统，Agent 在完整上下文中运行 digest，完成后**自动将结果发回聊天渠道**（飞书/WhatsApp/Telegram/Slack 等）：
 
 ```bash
 openclaw cron add \
@@ -217,15 +217,21 @@ openclaw cron add \
 ```
 
 - `--session isolated`：独立会话运行，不干扰主聊天
-- `--announce` + `--channel last`：完成后自动投递到 Agent 最近回复的渠道
+- `--announce` + `--channel last`：自动投递到 Agent 最近回复的渠道；也可指定 `--channel feishu --to "<group_id>"` 等
 - `--cron "0 23 * * *"`：每天 23:00（可改为 `"0 */12 * * *"` 每 12 小时）
-- 也可以指定渠道：`--channel feishu --to "<group_id>"`
 
-管理命令：
 ```bash
 openclaw cron list                    # 查看所有定时任务
 openclaw cron run <jobId> --force     # 手动触发一次
 openclaw cron edit <jobId> --cron "0 */12 * * *"  # 修改频率
+```
+
+### 其他框架：系统 Cron + 自行投递
+
+如果你的 Agent 框架没有内置投递机制，可以用系统 cron 触发 digest，再由 Agent 在下次对话时展示报告：
+
+```bash
+0 */12 * * * cd /your/project && node skills/sparker/index.js digest
 ```
 
 ### 环境变量调优
