@@ -3,7 +3,7 @@
 // runs preference profiling, pushes review cards, generates report.
 
 const { readRawSparksWithSnapshot, writeRawSparksSnapshot, readRefinedSparks, readPracticeRecords, appendDigestReport, writeRefinedSparks, readEmbers } = require('../core/storage');
-const { rebuildCapabilityMap, writeCapabilityMap } = require('../core/capability-map');
+const { rebuildCapabilityMap, writeCapabilityMap, formatCapabilityReport } = require('../core/capability-map');
 const { meetsRefinementThreshold, shouldReject } = require('../core/credibility');
 const { promoteEligibleRawSparks } = require('./promoter');
 const { decayRawSpark, decayRefinedSpark, applyInactivityDecay } = require('./decay');
@@ -298,6 +298,7 @@ async function runDigestUnlocked(opts) {
     },
     review_cards: reviewCandidates,
     capability_changes: capabilityMap.domains,
+    capability_map_display: formatCapabilityReport(capabilityMap),
     blind_spots: blindSpots,
     learning_suggestions: blindSpots.map(d => ({
       domain: d,

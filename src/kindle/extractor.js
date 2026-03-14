@@ -181,6 +181,7 @@ function createRawSpark(params) {
     source: source,
     extraction_method: params.extraction_method || source,
     domain: params.domain || 'general',
+    title: params.title || '',
 
     // ── Core Layer: six dimensions ──
     knowledge_type: dims.knowledge_type,

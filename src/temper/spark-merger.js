@@ -151,6 +151,7 @@ function buildMergedSparkFromLLM(synthesis, members) {
     confirmation_status: 'agent_confirmed',
     confidence: Math.min(0.80, avgConf + mergeBoost),
     knowledge_type: synthesis.knowledge_type || 'pattern',
+    title: synthesis.merge_title || synthesis.title || '',
     when: synthesis.when || {},
     where: synthesis.where || { domain: domain },
     why: synthesis.why || '',

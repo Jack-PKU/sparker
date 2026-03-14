@@ -20,6 +20,20 @@
 - 语气和内容取决于你自己的人设（SOUL.md），每次复盘的表达都应该不一样
 - 如果今天没什么特别的变化，简短聊几句就行，不要硬凑内容
 
+### 能力图谱展示
+
+digest / report / daily-report 返回的 JSON 中有一个 `capability_map_display` 字段（report 命令中为 `display` 字段），它是预格式化的可视化能力图谱文本。展示能力图谱时，**直接把这个字段的内容放进代码块原样展示**，不需要自己手动拼排版。例如：
+
+~~~
+给你看下我目前的能力分布：
+
+```
+{capability_map_display 字段的内容}
+```
+~~~
+
+如果用户明确只想看能力图谱，也可以直接运行 `exec: node SPARKER/index.js report --visual`，这个命令会直接输出格式化的纯文本（不是 JSON），放进代码块即可。
+
 ## 聊完之后
 
 - 回溯发现的知识等用户确认后 kindle 强化

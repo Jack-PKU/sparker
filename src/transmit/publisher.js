@@ -26,12 +26,32 @@ function createEmber(refinedSpark, opts) {
   }
 
   var now = new Date().toISOString();
+
+  // Derive title: prefer explicit title, fall back to a generated one
+  var title = sanitized.title || refinedSpark.title || '';
+  if (!title) {
+    var trigger = (refinedSpark.when || {}).trigger || '';
+    var howSum = (refinedSpark.how || {}).summary || '';
+    var whereDom = (refinedSpark.where || {}).domain || refinedSpark.domain || '';
+    var whereSubDom = (refinedSpark.where || {}).sub_domain || '';
+    if (trigger && howSum) {
+      title = trigger + '：' + howSum;
+    } else if (howSum) {
+      title = howSum;
+    } else if (trigger) {
+      title = trigger;
+    } else if (whereDom) {
+      title = (whereSubDom ? whereSubDom + ' — ' : '') + whereDom + '经验';
+    }
+  }
+
   var ember = {
     type: 'Ember',
     schema_version: STP_SCHEMA_VERSION,
     id: generateId('ember'),
     source_refined_id: refinedSpark.id,
     domain: refinedSpark.domain,
+    title: title,
 
     // ── Core Layer: six dimensions (sanitized) ──
     knowledge_type: sanitized.knowledge_type || refinedSpark.knowledge_type || 'rule',

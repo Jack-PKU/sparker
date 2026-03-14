@@ -130,6 +130,111 @@ function detectBlindSpots(taskDomains, capabilityMap) {
   return blindSpots;
 }
 
+// --- Rich text formatter for capability map ---
+
+function displayWidth(str) {
+  var w = 0;
+  for (var i = 0; i < str.length; i++) {
+    var code = str.charCodeAt(i);
+    if ((code >= 0x4E00 && code <= 0x9FFF) ||
+        (code >= 0x3000 && code <= 0x303F) ||
+        (code >= 0xFF00 && code <= 0xFFEF) ||
+        (code >= 0x3400 && code <= 0x4DBF) ||
+        (code >= 0xF900 && code <= 0xFAFF)) {
+      w += 2;
+    } else {
+      w += 1;
+    }
+  }
+  return w;
+}
+
+function padEnd(str, targetWidth) {
+  var w = displayWidth(str);
+  while (w < targetWidth) { str += ' '; w++; }
+  return str;
+}
+
+function padStart(str, targetWidth) {
+  var w = displayWidth(str);
+  var pad = '';
+  while (pad.length + w < targetWidth) pad += ' ';
+  return pad + str;
+}
+
+function makeBar(score, width) {
+  width = width || 20;
+  var filled = Math.round(score * width);
+  var bar = '';
+  for (var i = 0; i < width; i++) bar += i < filled ? '\u2588' : '\u2591';
+  return bar;
+}
+
+function formatPercentage(score) {
+  return padStart(Math.round(score * 100) + '%', 4);
+}
+
+function formatCapabilityReport(capMap) {
+  var domains = capMap.domains || {};
+  var names = Object.keys(domains);
+
+  if (names.length === 0) {
+    return '\uD83E\uDDE0 \u80FD\u529B\u56FE\u8C31\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\u8FD8\u6CA1\u6709\u4EFB\u4F55\u9886\u57DF\u7ECF\u9A8C\uFF0C\u5F00\u59CB\u548C\u6211\u804A\u5929\u5427\uFF01';
+  }
+
+  var groups = { mastered: [], proficient: [], learning: [], blind_spot: [] };
+  for (var i = 0; i < names.length; i++) {
+    var n = names[i];
+    var d = domains[n];
+    var s = d.status || 'blind_spot';
+    if (!groups[s]) groups[s] = [];
+    groups[s].push({ name: n, data: d });
+  }
+  for (var g in groups) {
+    groups[g].sort(function(a, b) { return (b.data.score || 0) - (a.data.score || 0); });
+  }
+
+  var counts = {};
+  var total = names.length;
+  for (var gk in groups) counts[gk] = groups[gk].length;
+
+  var maxNameWidth = 0;
+  for (var ni = 0; ni < names.length; ni++) {
+    var w = displayWidth(names[ni]);
+    if (w > maxNameWidth) maxNameWidth = w;
+  }
+  var COL = Math.max(maxNameWidth, 6) + 2;
+
+  var lines = [];
+  var BAR_W = 20;
+  var groupOrder = ['mastered', 'proficient', 'learning', 'blind_spot'];
+  var GROUP_LABELS = {
+    mastered: '\u7CBE\u901A',
+    proficient: '\u719F\u7EC3',
+    learning: '\u5B66\u4E60\u4E2D',
+    blind_spot: '\u76F2\u533A',
+  };
+
+  for (var gi = 0; gi < groupOrder.length; gi++) {
+    var gKey = groupOrder[gi];
+    var items = groups[gKey];
+    if (items.length === 0) continue;
+
+    lines.push(GROUP_LABELS[gKey] + '\uFF1A');
+
+    for (var ii = 0; ii < items.length; ii++) {
+      var item = items[ii];
+      var score = item.data.score || 0;
+      var bar = makeBar(score, BAR_W);
+      var pct = formatPercentage(score);
+      lines.push('  ' + padEnd(item.name, COL) + bar + ' ' + pct);
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
 module.exports = {
   createCapabilityMap,
   readCapabilityMap,
@@ -137,4 +242,5 @@ module.exports = {
   getStatus,
   rebuildCapabilityMap,
   detectBlindSpots,
+  formatCapabilityReport,
 };

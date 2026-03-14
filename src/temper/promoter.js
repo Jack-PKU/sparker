@@ -225,12 +225,23 @@ function synthesizeRefinedSpark(group, domain) {
   // Merge six-dimension fields from all sparks in the group
   var mergedDims = mergeSixDimensions(group);
 
+  // Pick the best title: from the highest-confidence spark that has one
+  var bestTitle = '';
+  var bestTitleConf = -1;
+  for (var ti = 0; ti < group.length; ti++) {
+    if (group[ti].title && (group[ti].confidence || 0) > bestTitleConf) {
+      bestTitle = group[ti].title;
+      bestTitleConf = group[ti].confidence || 0;
+    }
+  }
+
   var refined = {
     type: 'RefinedSpark',
     schema_version: STP_SCHEMA_VERSION,
     id: generateId('refined_' + domain.replace(/[^a-zA-Z0-9_]/g, '_')),
     domain: domain,
     task_type: taskType,
+    title: bestTitle,
 
     // ── Core Layer: six dimensions (merged from raw sparks) ──
     knowledge_type: mergedDims.knowledge_type,

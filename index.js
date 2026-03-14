@@ -554,17 +554,23 @@ function handlePostTask(stdinData) {
   console.log(JSON.stringify(results));
 }
 
-function handleReport() {
+function handleReport(args) {
   var storage = require('./src/core/storage');
-  var { readCapabilityMap } = require('./src/core/capability-map');
+  var { readCapabilityMap, formatCapabilityReport } = require('./src/core/capability-map');
 
   var raw = storage.readRawSparks();
   var refined = storage.readRefinedSparks();
   var embers = storage.readEmbers();
   var capMap = readCapabilityMap();
 
+  if (args && args.flags && args.flags.visual) {
+    console.log(formatCapabilityReport(capMap));
+    return;
+  }
+
   var report = {
     capability_map: capMap,
+    display: formatCapabilityReport(capMap),
     statistics: {
       raw_sparks: raw.length,
       refined_sparks: refined.length,
@@ -687,7 +693,7 @@ function handleHubUrl(args) {
 
 async function handleDailyReport() {
   var storage = require('./src/core/storage');
-  var { readCapabilityMap } = require('./src/core/capability-map');
+  var { readCapabilityMap, formatCapabilityReport } = require('./src/core/capability-map');
   var { runDigest } = require('./src/temper/digest');
 
   var report = await runDigest({ hours: 24 });
@@ -705,26 +711,6 @@ async function handleDailyReport() {
       s.confirmation_status === 'human_confirmed' &&
       s.confidence < 0.35 && s.confidence > 0.10;
   });
-
-  var capLines = [];
-  for (var d in capMap.domains) {
-    var dm = capMap.domains[d];
-    var bar = '';
-    var score = dm.score || 0;
-    var filled = Math.round(score * 10);
-    for (var i = 0; i < 10; i++) bar += i < filled ? '\u2588' : '\u2591';
-    capLines.push('  ' + d + '  ' + bar + ' ' + dm.status + ' (' + score.toFixed(2) + ')');
-    if (dm.sub_domains) {
-      for (var sd in dm.sub_domains) {
-        var sub = dm.sub_domains[sd];
-        var sbar = '';
-        var sscore = sub.score || 0;
-        var sfilled = Math.round(sscore * 10);
-        for (var si = 0; si < 10; si++) sbar += si < sfilled ? '\u2588' : '\u2591';
-        capLines.push('  \u251C\u2500\u2500 ' + sd + '  ' + sbar + ' ' + sub.status + ' (' + sscore.toFixed(2) + ')');
-      }
-    }
-  }
 
   var newRefinedLines = [];
   if (report && report.new_refined_sparks) {
@@ -753,7 +739,8 @@ async function handleDailyReport() {
       at_risk_count: atRisk.length,
     },
     new_refined: newRefinedLines,
-    capability_map: capLines,
+    capability_map_display: formatCapabilityReport(capMap),
+    capability_map: capMap,
     at_risk: atRiskLines,
     digest_skipped: report && report.skipped ? true : false,
   };
@@ -855,7 +842,7 @@ async function main() {
       handlePostTask(stdinData);
       break;
     case 'report':
-      handleReport();
+      handleReport(args);
       break;
     case 'strategy':
       handleStrategy(args);
@@ -908,7 +895,7 @@ async function main() {
       process.stderr.write('  crystallize Export domain knowledge for skill generation\n\n');
       process.stderr.write('Info:\n');
       process.stderr.write('  status        Show STP status and hub connection\n');
-      process.stderr.write('  report        Generate capability report\n');
+      process.stderr.write('  report        Generate capability report (--visual for formatted text)\n');
       process.stderr.write('  daily-report    Daily learning summary (for cron)\n');
       process.stderr.write('  profile         View domain preference profile\n');
       process.stderr.write('  strategy        Show adaptive learning strategy\n');

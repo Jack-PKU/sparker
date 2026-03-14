@@ -244,6 +244,7 @@ function normalizeHubSpark(s) {
     id: s.id,
     type: 'HubSpark',
     domain: s.domain_id || s.domain,
+    title: s.title || '',
     summary: s.how_summary || extractSummary(s),
     score: s._score || s._effective_score || 0,
     credibility: s.credibility_score || s._effective_score || 0,

@@ -26,6 +26,7 @@
 {
   "source": "<来源>",
   "domain": "<点分隔领域，如 咖啡烘焙.冲煮参数>",
+  "title": "<一句话标题，面向人类阅读，如：美妆直播策划标题应该怎么设计>",
   "knowledge_type": "rule|preference|pattern|lesson|methodology",
   "when":   { "trigger": "<激活场景>", "conditions": ["<前提条件>"] },
   "where":  { "scenario": "<环境>", "audience": "<受众>" },
@@ -36,7 +37,7 @@
 }
 ```
 
-**采火前检查**：WHEN 有触发条件？WHERE 有场景？WHY 有因果链？HOW 可执行？RESULT 有预期？NOT 有例外？全部齐了才 kindle。
+**采火前检查**：TITLE 有简明标题？WHEN 有触发条件？WHERE 有场景？WHY 有因果链？HOW 可执行？RESULT 有预期？NOT 有例外？全部齐了才 kindle。
 
 ---
 
@@ -53,6 +54,7 @@
 {
   "source": "human_feedback",
   "domain": "手冲咖啡.冲煮参数",
+  "title": "浅烘焙手冲咖啡的最佳水温控制",
   "knowledge_type": "rule",
   "when": { "trigger": "调整手冲水温", "conditions": ["浅烘焙豆"] },
   "where": { "scenario": "家用手冲", "audience": "咖啡爱好者" },

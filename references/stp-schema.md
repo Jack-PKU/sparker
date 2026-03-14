@@ -59,6 +59,7 @@ All RawSparks now include six structured dimensions in addition to legacy fields
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `title` | string | Human-readable title (e.g. "浅烘焙手冲咖啡的最佳水温控制"). Auto-generated from trigger+how if empty. |
 | `knowledge_type` | `rule\|preference\|pattern\|lesson\|methodology` | Experience classification |
 | `when.trigger` | string | What need/task triggers this experience |
 | `when.conditions` | string[] | Additional qualifying conditions |
