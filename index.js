@@ -622,7 +622,7 @@ function handleStrategy(args) {
 // --- Hub identity commands ---
 
 async function handleLogin(args) {
-  var { loginToHub } = require('./src/transmit/auth');
+  var { loginToHub, getIdentity } = require('./src/transmit/auth');
   var email = args.flags.email || args.positional[0];
   var password = args.flags.password || args.positional[1];
   if (!email || !password) {
@@ -630,6 +630,9 @@ async function handleLogin(args) {
     process.exit(1);
   }
   var result = await loginToHub(email, password);
+  if (result.ok) {
+    result.identity = getIdentity();
+  }
   console.log(JSON.stringify(result));
 }
 
@@ -655,15 +658,23 @@ async function handleBind(args) {
     process.exit(1);
   }
   saveBindingKey(key);
-  var identity = getIdentity();
 
-  // Validate connectivity after saving
   var validation = await validateBindingKey();
-  var result = { ok: true, message: 'Binding key saved', identity: identity };
-  if (!validation.ok && validation.error === 'binding_key_invalid') {
-    result.warning = 'Binding key saved but hub returned ' + validation.status + '. The key may be invalid.';
+
+  // Re-read identity AFTER validation so it reflects the actual state
+  // (validateBindingKey may have triggered consume or clearBinding)
+  var identity = getIdentity();
+  var result = {
+    ok: true,
+    message: 'Binding key saved',
+    registered: !!(validation.ok && validation.valid),
+    identity: identity,
+  };
+  if (validation.binding_cleared) {
+    result.ok = false;
+    result.message = 'Binding key is invalid or has already been used. Please generate a new one.';
   } else if (!validation.ok && validation.error === 'network_error') {
-    result.warning = 'Binding key saved but hub is unreachable. Will validate on next request.';
+    result.message = 'Binding key saved locally. Hub is unreachable — will register on next request.';
   }
   console.log(JSON.stringify(result));
 }
