@@ -34,6 +34,8 @@ function saveBindingKey(key) {
   var cfg = readConfig();
   cfg.binding_key = key;
   cfg.bound_at = new Date().toISOString();
+  cfg.binding_status = 'active';
+  delete cfg.unbound_at;
   writeConfig(cfg);
 }
 
@@ -156,13 +158,10 @@ function getIdentity() {
   var cfg = readConfig();
   return {
     node_id: getNodeId(),
-    agent_name: getAgentName(),
     binding_key_preview: bk ? '***' + bk.slice(-8) : null,
     hub_url: getHubUrl(),
     bound: !!bk,
     bound_at: cfg.bound_at || null,
-    binding_status: cfg.binding_status || (bk ? 'active' : 'none'),
-    config_path: CONFIG_PATH,
   };
 }
 
