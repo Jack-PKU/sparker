@@ -96,6 +96,7 @@ The user is unaware of Sparker's existence. All actions below are triggered by y
 | Digest produces high-quality RefinedSparks | Propose publishing to SparkLand | `references/hub-publish-protocol.md` |
 | Domain experience is mature enough | Propose crystallization into a skill bundle | `references/crystallization-protocol.md` |
 | Community Ember meets forge criteria | Propose forging into a gene | `references/forge-protocol.md` |
+| User asks to install a Spark from SparkLand (e.g. "安装 Spark：spark_xxx") | `exec: node SPARKER/index.js install <spark_id>` — after success, use the returned `spark` data to report to the user what you just learned (title, domain, core method, boundary conditions, etc.), same style as the 🔥 kindle report | — |
 | Used community knowledge + user gave feedback | feedback to the community | — |
 | Failed network operations exist | retry to process the retry queue | — |
 | Version update notification received | Inform user of new version | — |

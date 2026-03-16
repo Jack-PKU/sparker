@@ -790,6 +790,56 @@ function handleMigrate(args) {
   console.log(JSON.stringify(result));
 }
 
+async function handleInstall(args) {
+  var sparkId = args.positional[0] || args.flags.id;
+  if (!sparkId) {
+    process.stderr.write('Usage: node index.js install <spark_id>\n');
+    process.stderr.write('  Download a Spark from SparkLand into your local knowledge base.\n');
+    process.exit(1);
+  }
+
+  var { hubFetch, getHubUrl, normalizeHubSpark } = require('./src/transmit/hub-client');
+  var { appendHubCache } = require('./src/core/storage');
+
+  if (!getHubUrl()) {
+    console.log(JSON.stringify({ ok: false, error: 'hub_not_configured', message: 'Hub URL not set. Run: node index.js hub-url <url>' }));
+    return;
+  }
+
+  var result = await hubFetch(sparkId);
+  if (!result.ok) {
+    console.log(JSON.stringify({ ok: false, error: result.error || 'hub_fetch_failed', message: 'Failed to fetch spark from SparkLand' }));
+    return;
+  }
+
+  var payload = result.response && result.response.payload ? result.response.payload : result.response;
+  var spark = payload.spark;
+  if (!spark) {
+    console.log(JSON.stringify({ ok: false, error: 'spark_not_found', message: 'Spark not found on SparkLand' }));
+    return;
+  }
+
+  var normalized = normalizeHubSpark(spark);
+  var added = appendHubCache([normalized]);
+
+  try {
+    require('./src/core/search-index').rebuildSearchIndex();
+    await require('./src/core/search-index').computeIndexEmbeddings();
+  } catch (e) { /* best-effort */ }
+
+  console.log(JSON.stringify({
+    ok: true,
+    spark_id: spark.id,
+    title: normalized.title || normalized.summary || spark.summary || '',
+    domain: normalized.domain || spark.domain_id || '',
+    already_cached: added === 0,
+    message: added > 0
+      ? 'Spark installed to local knowledge base successfully'
+      : 'Spark was already in local knowledge base',
+    spark: normalized,
+  }));
+}
+
 async function handleRebuildIndex(args) {
   var { rebuildSearchIndex, computeIndexEmbeddings } = require('./src/core/search-index');
   var { isEmbeddingAvailable } = require('./src/core/embedding');
@@ -910,6 +960,9 @@ async function main() {
     case 'retry':
       await handleRetry();
       break;
+    case 'install':
+      await handleInstall(args);
+      break;
     case 'rebuild-index':
       await handleRebuildIndex(args);
       break;
@@ -930,6 +983,7 @@ async function main() {
       process.stderr.write('  publish     Publish RefinedSpark as Ember to hub\n');
       process.stderr.write('  categories  Fetch category tree from SparkHub (for pre-classification)\n');
       process.stderr.write('  feedback    Send vote (positive/negative) to hub for used sparks\n');
+      process.stderr.write('  install     Download a Spark from SparkLand into local knowledge base\n');
       process.stderr.write('  digest      Run periodic review\n');
       process.stderr.write('  forge       Forge eligible Embers into GEP Genes\n');
       process.stderr.write('  crystallize Export domain knowledge for skill generation\n\n');
